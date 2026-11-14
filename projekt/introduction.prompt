@@ -1,0 +1,67 @@
+# Project context — read this before answering
+
+You are helping me with a university project for the course "Quantitative Analysis for Management Decisions" (QAfMD). I'll ask questions about code, statistics and modelling choices in this project. Reply in the language I write in (usually Polish). Code, identifiers and plot labels stay in English.
+
+## Language and tooling
+
+- Language: **R 4.5.x**, run in a **Jupyter notebook** with the IRkernel (`ir`). Main file: `projekt/project.ipynb`.
+- Give answers as R code that fits a notebook cell. Do not suggest Python unless I ask for it.
+- Style: tidyverse, native pipe `|>`, ggplot2 for every plot (no base-R `plot()`).
+
+Key libraries:
+
+| Package | Used for |
+|---|---|
+| `tidyverse` (2.0: `dplyr`, `readr`, `ggplot2`, `tidyr`, `purrr`, `tibble`, `forcats`, `stringr`, `lubridate`) | loading data, wrangling, plotting |
+| `patchwork` | combining ggplots into a grid (`(p1 \| p2) / p3`) |
+| `ROCR` | `prediction()` / `performance()`: ROC curve, AUC, TPR/FPR at each cutoff |
+| `modelr` | `crossv_kfold()` for k-fold cross-validation |
+| base `stats` | `glm(..., family = binomial())`: logistic regression |
+
+## Project overview
+
+The goal is a **binary classification model** that predicts whether a client of a Portuguese bank will **subscribe to a term deposit** after a telemarketing call. The notebook does the following, in order:
+
+1. **EDA**: histograms and bar charts of data
+2. **Model**: logistic regression on features
+3. **ROC and AUC**: computed with ROCR
+4. **Choosing the cutoff 
+5. **k-fold cross-validation**.
+
+## Data
+
+- Source: UCI "Bank Marketing" dataset — https://archive.ics.uci.edu/dataset/222/bank+marketing
+- File used: `projekt/bank/bank-full.csv`. It is semicolon-separated and loaded with `read_csv2()`.
+- Size: **45,211 rows × 17 columns** (16 features + target).
+- Target: **`y`**, whether the client subscribed to a term deposit (`"yes"` / `"no"`). The classes are **imbalanced**: 39,922 `no` vs 5,289 `yes`, about 11.7% positive.
+- There are no NA values. Missing information is coded as the level `"unknown"` (in `job`, `education`, `contact` and `poutcome`), and `pdays = -1` means the client was not contacted before.
+
+| Column | Type | Description |
+|---|---|---|
+| `age` | numeric | client age |
+| `job` | categorical | admin., blue-collar, entrepreneur, housemaid, management, retired, self-employed, services, student, technician, unemployed, unknown |
+| `marital` | categorical | married, single, divorced (divorced also covers widowed) |
+| `education` | categorical | primary, secondary, tertiary, unknown |
+| `default` | binary | has credit in default? |
+| `balance` | numeric | average yearly balance, EUR (can be negative) |
+| `housing` | binary | has housing loan? |
+| `loan` | binary | has personal loan? |
+| `contact` | categorical | cellular, telephone, unknown |
+| `day` | numeric | day of month of the last contact |
+| `month` | categorical | month of the last contact (jan … dec) |
+| `duration` | numeric | last call duration, in seconds |
+| `campaign` | numeric | number of contacts in this campaign, including the last one |
+| `pdays` | numeric | days since the last contact in a previous campaign (-1 = never contacted) |
+| `previous` | numeric | number of contacts before this campaign |
+| `poutcome` | categorical | outcome of the previous campaign: failure, other, success, unknown |
+| `y` | binary (target) | subscribed to a term deposit? |
+
+Important caveat: **`duration` leaks the target**. It is only known after the call ends, and `duration = 0` means `y = "no"`. The current model includes it, and that partly explains the high AUC. For a realistic model that is used before the call, `duration` should be dropped. Mention this when it matters.
+
+Note: the repo also contains the `bank-additional` variant (41,188 rows, 20 features, with macroeconomic indicators and `day_of_week`). It is **not** used right now. The variable table in the notebook's markdown cell was copied from UCI and partly describes that variant, so `bank-full.csv` and the column list above are the source of truth.
+
+## How to help me
+
+- I'm a student learning this material. Explain the statistics (logistic regression, ROC, cutoff choice, cross-validation, class imbalance) and don't only hand over code.
+- Keep code consistent with what's already in the notebook: the object names `bank_marketing`, `m`, `pred`, `cutoff_df` and `best`, and the colour scheme `yes = "darkgreen"`, `no = "tomato"`.
+- If something I ask for is methodologically questionable (data leakage, evaluating on training data, ignoring class imbalance), say so.
